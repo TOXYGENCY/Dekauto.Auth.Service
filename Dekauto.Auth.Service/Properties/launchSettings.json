@@ -9,7 +9,7 @@
         "ConnectionStrings:Main": "Host=localhost;Port=5432;Database=Dekauto;Username=postgres;Password=;"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5280"
+      "applicationUrl": "http://localhost:5507"
     },
     "https": {
       "commandName": "Project",
@@ -20,7 +20,7 @@
         "ConnectionStrings:Main": "Host=localhost;Port=5432;Database=Dekauto;Username=postgres;Password=;"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7202;http://localhost:5280"
+      "applicationUrl": "https://localhost:5508;http://localhost:5507"
     },
     "IIS Express": {
       "commandName": "IISExpress",

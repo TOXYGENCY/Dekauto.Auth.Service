@@ -1,6 +1,6 @@
 ﻿namespace Dekauto.Auth.Service.Domain.Entities.DTO
 {
-    public partial class UserDTO
+    public partial class UserDto
     {
         public Guid Id { get; set; }
 
