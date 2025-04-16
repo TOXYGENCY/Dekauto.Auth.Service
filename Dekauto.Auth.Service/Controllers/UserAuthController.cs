@@ -14,7 +14,7 @@ namespace Dekauto.Auth.Service.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> AuthenticateUser(string login, string password)
+        public async Task<ActionResult> AuthenticateUserAsync(string login, string password)
         {
             try
             {

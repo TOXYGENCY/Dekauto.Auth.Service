@@ -9,12 +9,20 @@ namespace Dekauto.Auth.Service.Services
     public class UserAuthService : IUserAuthService, IDtoConverter<User, UserDto>
     {
         private readonly IUsersRepository usersRepository;
-        private readonly PasswordHasher<User> hasher;
+        private readonly IRolesService rolesService;
+        private readonly PasswordHasher<object> hasher; // object, а не User, потому что в этой реализации .HashPassword аргумент user не используется
 
-        public UserAuthService(IUsersRepository usersRepository)
+        public UserAuthService(IUsersRepository usersRepository, IRolesService rolesService)
         {
             this.usersRepository = usersRepository;
-            hasher = new PasswordHasher<User>();
+            this.rolesService = rolesService;
+            hasher = new PasswordHasher<object>();
+        }
+
+        // хеширование пароля
+        public string HashPassword(string password)
+        {
+            return hasher.HashPassword(null, password); // null, а не User, потому что в этой реализации .HashPassword аргумент user не используется
         }
 
         /// <summary>
@@ -63,10 +71,25 @@ namespace Dekauto.Auth.Service.Services
             if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password)) throw new ArgumentException();
 
             var account = await usersRepository.GetByLoginAsync(login);
-            if (account == null) throw new KeyNotFoundException(login);
+            if (account == null) throw new KeyNotFoundException($"Пользователь {login} не найден");
 
             var result = hasher.VerifyHashedPassword(account, account.PasswordHash, password);
             return result == PasswordVerificationResult.Success;
+        }
+
+        public async Task AddUserAsync(UserDto userDto)
+        {
+            if (userDto is null) throw new ArgumentNullException(nameof(userDto));
+
+            var passwordHash = HashPassword(userDto.Password);
+            var role = await rolesService.GetByRoleNameAsync(userDto.RoleName);
+            if (role == null) throw new KeyNotFoundException($"Роль {userDto.RoleName} не найдена");
+
+            var newUser = await FromDtoAsync(userDto);
+            newUser.PasswordHash = passwordHash;
+            newUser.RoleId = role.Id;
+
+            await usersRepository.AddAsync(newUser);
         }
     }
 }

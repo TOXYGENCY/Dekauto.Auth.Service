@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using System.Collections.Generic;
 
 namespace Dekauto.Auth.Service.Domain.Entities;
 

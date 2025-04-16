@@ -1,3 +1,6 @@
+using Dekauto.Auth.Service.Domain.Interfaces;
+using Dekauto.Auth.Service.Infrastructure;
+using Dekauto.Auth.Service.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -20,7 +23,14 @@ builder.Services.AddControllers()
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(); 
+builder.Services.AddSwaggerGen();
+builder.Services.AddTransient<IUserAuthService, UserAuthService>();
+builder.Services.AddTransient<IUsersRepository, UsersRepository>();
+builder.Services.AddTransient<IRolesRepository, RolesRepository>();
+builder.Services.AddTransient<IRolesService, RolesService>();
+builder.Services.AddDbContext<DekautoContext>(options =>
+    options.UseNpgsql(connectionString)
+    .UseLazyLoadingProxies());
 builder.Services.AddCors(options => options.AddPolicy("AngularLocalhost", policy =>
 {
     policy.WithOrigins("http://localhost:4200") // Адрес Angular-приложения
