@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace Dekauto.Auth.Service.Services
 {
-    public class UserAuthService : IUserAuthService, IDtoConverter<User, UserDto>
+    public class UserAuthService : IUserAuthService
     {
         private readonly IUsersRepository usersRepository;
         private readonly IRolesService rolesService;
@@ -50,7 +50,18 @@ namespace Dekauto.Auth.Service.Services
         public UserDto ToDto(User user)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
-            return JsonSerializationConvert<User, UserDto>(user);
+            var userDto = JsonSerializationConvert<User, UserDto>(user);
+
+            userDto.Password = null; // Формируемое Dto (для клиента) не содержит пароля, потому что в БД только хеши
+            if (user.Role == null)
+            {
+                Console.WriteLine($"WARNING: роль == null у пользователя {user}");
+                userDto.RoleName = null;
+            } else
+            {
+                userDto.RoleName = user.Role.Name;
+            }
+            return userDto;
         }
 
         public IEnumerable<UserDto> ToDtos(IEnumerable<User> users)
@@ -60,10 +71,42 @@ namespace Dekauto.Auth.Service.Services
             var userDtos = new List<UserDto>();
             foreach (var user in users)
             {
-                userDtos.Add(JsonSerializationConvert<User, UserDto>(user));
+                userDtos.Add(ToDto(user));
             }
 
             return userDtos;
+        }
+
+        public async Task UpdateUserAsync(Guid userId, UserDto updatedUserDto)
+        {
+            if (updatedUserDto == null || userId == null) throw new ArgumentNullException("Не все аргументы переданы.");
+            if (updatedUserDto.Id != userId) throw new ArgumentException("ID не совпадают.");
+
+            // Получаем текущего пользователя из репозитория
+            var user = await usersRepository.GetByIdAsync(userId);
+            if (user == null)
+                throw new InvalidOperationException($"Пользователь с Id = {userId} не найден.");
+
+            // Обновляем поля, которые должны измениться
+            user.Login = updatedUserDto.Login;
+
+            // Обновляем пароль, если он был передан (и если необходимо)
+            if (!string.IsNullOrWhiteSpace(updatedUserDto.Password))
+            {
+                // Хешируем пароль перед сохранением
+                user.PasswordHash = HashPassword(updatedUserDto.Password);
+            }
+
+            // Обновляем роль пользователя, если нужно (например, по имени роли)
+            if (!string.IsNullOrWhiteSpace(updatedUserDto.RoleName))
+            {
+                var role = await rolesService.GetByRoleNameAsync(updatedUserDto.RoleName);
+                if (role == null)
+                    throw new InvalidOperationException($"Роль '{updatedUserDto.RoleName}' не найдена.");
+                user.RoleId = role.Id;
+                user.Role = role;
+            }
+            await usersRepository.UpdateAsync(user);
         }
 
         public async Task<bool> AuthenticateAsync(string login, string password)
