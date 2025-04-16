@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
 using Dekauto.Auth.Service.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dekauto.Auth.Service;
+namespace Dekauto.Auth.Service.Infrastructure;
 
 public partial class DekautoContext : DbContext
 {
@@ -300,15 +299,17 @@ public partial class DekautoContext : DbContext
 
             entity.ToTable("users");
 
+            entity.HasIndex(e => e.Login, "users_login_key").IsUnique();
+
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("id");
             entity.Property(e => e.Login)
                 .HasMaxLength(100)
                 .HasColumnName("login");
-            entity.Property(e => e.Password)
+            entity.Property(e => e.PasswordHash)
                 .HasMaxLength(100)
-                .HasColumnName("password");
+                .HasColumnName("password_hash");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)

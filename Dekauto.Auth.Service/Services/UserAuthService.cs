@@ -1,6 +1,7 @@
 ﻿using Dekauto.Auth.Service.Domain.Entities;
 using Dekauto.Auth.Service.Domain.Entities.DTO;
 using Dekauto.Auth.Service.Domain.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using System.Text.Json;
 
 namespace Dekauto.Auth.Service.Services
@@ -8,9 +9,12 @@ namespace Dekauto.Auth.Service.Services
     public class UserAuthService : IUserAuthService, IDtoConverter<User, UserDto>
     {
         private readonly IUsersRepository usersRepository;
+        private readonly PasswordHasher<User> hasher;
+
         public UserAuthService(IUsersRepository usersRepository)
         {
             this.usersRepository = usersRepository;
+            hasher = new PasswordHasher<User>();
         }
 
         /// <summary>
@@ -52,6 +56,17 @@ namespace Dekauto.Auth.Service.Services
             }
 
             return userDtos;
+        }
+
+        public async Task<bool> AuthenticateAsync(string login, string password)
+        {
+            if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password)) throw new ArgumentException();
+
+            var account = await usersRepository.GetByLoginAsync(login);
+            if (account == null) throw new KeyNotFoundException(login);
+
+            var result = hasher.VerifyHashedPassword(account, account.PasswordHash, password);
+            return result == PasswordVerificationResult.Success;
         }
     }
 }

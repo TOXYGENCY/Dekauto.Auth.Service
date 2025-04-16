@@ -35,6 +35,11 @@ namespace Dekauto.Auth.Service.Infrastructure
             return await сontext.Users.FirstOrDefaultAsync(user => user.Id == id);
         }
 
+        public async Task<User> GetByLoginAsync(string login)
+        {
+            return await сontext.Users.FirstOrDefaultAsync(user => user.Login == login);
+        }
+
         public async Task UpdateAsync(User updatedUser)
         {
             var currentUser = await сontext.Users.FirstOrDefaultAsync(s => s.Id == updatedUser.Id);
