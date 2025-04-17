@@ -2,6 +2,7 @@
 using Dekauto.Auth.Service.Domain.Entities.DTO;
 using Dekauto.Auth.Service.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace Dekauto.Auth.Service.Services
@@ -10,13 +11,36 @@ namespace Dekauto.Auth.Service.Services
     {
         private readonly IUsersRepository usersRepository;
         private readonly IRolesService rolesService;
+        private readonly IJwtTokenService jwtTokenService;
         private readonly PasswordHasher<object> hasher; // object, а не User, потому что в этой реализации .HashPassword аргумент user не используется
 
-        public UserAuthService(IUsersRepository usersRepository, IRolesService rolesService)
+        public UserAuthService(IUsersRepository usersRepository, IRolesService rolesService, IJwtTokenService jwtTokenService)
         {
             this.usersRepository = usersRepository;
+            this.jwtTokenService = jwtTokenService;
             this.rolesService = rolesService;
             hasher = new PasswordHasher<object>();
+        }
+
+        public async Task<string> AuthenticateAndGetTokenAsync(string login, string password)
+        {
+            if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password)) throw new ArgumentException();
+
+            var userAccount = await usersRepository.GetByLoginAsync(login);
+            if (userAccount == null) throw new KeyNotFoundException($"Пользователь {login} не найден");
+
+            var result = hasher.VerifyHashedPassword(userAccount, userAccount.PasswordHash, password);
+
+            // Проверка данных и выдача JWT, если успех
+            if (result == PasswordVerificationResult.Success || result == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                var token = jwtTokenService.GenerateToken(userAccount.Login, userAccount.Id, userAccount.Role.Name);
+                return token;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         // хеширование пароля
@@ -85,7 +109,7 @@ namespace Dekauto.Auth.Service.Services
             // Получаем текущего пользователя из репозитория
             var user = await usersRepository.GetByIdAsync(userId);
             if (user == null)
-                throw new InvalidOperationException($"Пользователь с Id = {userId} не найден.");
+                throw new InvalidOperationException($"Пользоват  ель с Id = {userId} не найден.");
 
             // Обновляем поля, которые должны измениться
             user.Login = updatedUserDto.Login;
@@ -107,17 +131,6 @@ namespace Dekauto.Auth.Service.Services
                 user.Role = role;
             }
             await usersRepository.UpdateAsync(user);
-        }
-
-        public async Task<bool> AuthenticateAsync(string login, string password)
-        {
-            if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password)) throw new ArgumentException();
-
-            var account = await usersRepository.GetByLoginAsync(login);
-            if (account == null) throw new KeyNotFoundException($"Пользователь {login} не найден");
-
-            var result = hasher.VerifyHashedPassword(account, account.PasswordHash, password);
-            return result == PasswordVerificationResult.Success;
         }
 
         public async Task AddUserAsync(UserDto userDto)

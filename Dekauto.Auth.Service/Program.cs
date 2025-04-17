@@ -1,7 +1,10 @@
 using Dekauto.Auth.Service.Domain.Interfaces;
 using Dekauto.Auth.Service.Infrastructure;
 using Dekauto.Auth.Service.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +19,23 @@ builder.Configuration
 
 var connectionString = builder.Configuration.GetConnectionString("Main");
 
+// Добавляем JWT сервисы
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
+builder.Services.AddAuthorization();
 // Add services to the container.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -25,6 +45,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddTransient<IUserAuthService, UserAuthService>();
+builder.Services.AddTransient<IJwtTokenService, JwtTokenService>();
 builder.Services.AddTransient<IUsersRepository, UsersRepository>();
 builder.Services.AddTransient<IRolesRepository, RolesRepository>();
 builder.Services.AddTransient<IRolesService, RolesService>();

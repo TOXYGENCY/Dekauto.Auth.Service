@@ -8,23 +8,23 @@ namespace Dekauto.Auth.Service.Controllers
     public class UserAuthController : ControllerBase
     {
         private readonly IUserAuthService userAuthService;
+
         public UserAuthController(IUserAuthService userAuthService)
         {
             this.userAuthService = userAuthService;
         }
 
         [HttpPost]
-        public async Task<ActionResult> AuthenticateUserAsync(string login, string password)
+        public async Task<ActionResult> AuthenticateAndGetTokenAsync(string login, string password)
         {
             try
             {
-                // TODO: Попытка авторизации
-                var result = await userAuthService.AuthenticateAsync(login, password);
-                // TODO: Выдача JWT токена
-
+                // TODO: Попытка авторизации и выдача JWT токена
+                var token = await userAuthService.AuthenticateAndGetTokenAsync(login, password);
+                if (token == null) throw new Exception("JWT-токен не получен.");
                 // TODO: Управление refresh-токеном
 
-                return Ok(result);
+                return Ok(token);
             }
             catch (Exception ex)
             {
