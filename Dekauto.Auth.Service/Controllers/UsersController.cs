@@ -81,11 +81,11 @@ namespace Dekauto.Auth.Service.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> AddUserAsync(UserDto userDto)
+        public async Task<ActionResult> AddUserAsync(UserDto userDto, string password)
         {
             try
             {
-                await userAuthService.AddUserAsync(userDto);
+                await userAuthService.AddUserAsync(userDto, password);
                 return Ok();
             }
             catch (Exception ex)

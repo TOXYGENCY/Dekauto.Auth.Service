@@ -1,9 +1,12 @@
-﻿using Dekauto.Auth.Service.Domain.Interfaces;
+﻿using Dekauto.Auth.Service.Domain.Entities.Adapters;
+using Dekauto.Auth.Service.Domain.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Dekauto.Auth.Service.Controllers
 {
-    [Route("api/auth/user")]
+    [Route("api/auth")]
     [ApiController]
     public class UserAuthController : ControllerBase
     {
@@ -15,21 +18,44 @@ namespace Dekauto.Auth.Service.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> AuthenticateAndGetTokenAsync(string login, string password)
+        public async Task<ActionResult> AuthenticateAndGetTokenAsync([FromBody] LoginAdapter loginUser)
         {
+
             try
             {
+                if (loginUser is null) throw new ArgumentNullException(nameof(loginUser));
                 // TODO: Попытка авторизации и выдача JWT токена
-                var token = await userAuthService.AuthenticateAndGetTokenAsync(login, password);
-                if (token == null) throw new Exception("JWT-токен не получен.");
+                var tokensAdapter = await userAuthService.AuthenticateAndGetTokensAsync(loginUser.Login, loginUser.Password);
+                //if (tokensAdapter == null) throw new Exception("JWT-токен не получен.");
                 // TODO: Управление refresh-токеном
 
-                return Ok(token);
+                return Ok(tokensAdapter);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new { ex.Message, ex.StackTrace });
+            }
+            catch (ArgumentNullException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new { ex.Message, ex.StackTrace });
             }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { ex.Message, ex.StackTrace });
             }
+        }
+
+        // Метод, который будет кидать ошибку 401, если токен невалиден - фронт разлогинит пользователя
+        [HttpGet("validate")]
+        [Authorize] // Отсюда будет вылетать 401 Unauthorized
+        public IActionResult Validate()
+        {
+            // Доступ к данным пользователя User (из Authorize) из токена
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var login = User.FindFirst(ClaimTypes.Name)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            return Ok(new { UserId = userId, Login = login, Role = role });
         }
     }
 }

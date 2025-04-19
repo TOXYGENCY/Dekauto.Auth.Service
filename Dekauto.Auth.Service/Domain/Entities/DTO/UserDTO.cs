@@ -6,9 +6,6 @@
 
         public string Login { get; set; }
 
-        // Незахешированный пароль с клиента
-        public string? Password { get; set; }
-
         public string RoleName { get; set; }
     }
 }

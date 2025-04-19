@@ -1,4 +1,5 @@
 ﻿using Dekauto.Auth.Service.Domain.Entities;
+using Dekauto.Auth.Service.Domain.Entities.Adapters;
 using Dekauto.Auth.Service.Domain.Entities.DTO;
 using Dekauto.Auth.Service.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -22,7 +23,7 @@ namespace Dekauto.Auth.Service.Services
             hasher = new PasswordHasher<object>();
         }
 
-        public async Task<string> AuthenticateAndGetTokenAsync(string login, string password)
+        public async Task<AuthTokensAdapter> AuthenticateAndGetTokensAsync(string login, string password)
         {
             if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password)) throw new ArgumentException();
 
@@ -31,11 +32,11 @@ namespace Dekauto.Auth.Service.Services
 
             var result = hasher.VerifyHashedPassword(userAccount, userAccount.PasswordHash, password);
 
-            // Проверка данных и выдача JWT, если успех
+            // Проверка данных и выдача JWT + данных пользователя, если успех
             if (result == PasswordVerificationResult.Success || result == PasswordVerificationResult.SuccessRehashNeeded)
             {
-                var token = jwtTokenService.GenerateToken(userAccount.Login, userAccount.Id, userAccount.Role.Name);
-                return token;
+                var tokensAdapter = jwtTokenService.GenerateToken(ToDto(userAccount));
+                return tokensAdapter;
             }
             else
             {
@@ -76,7 +77,6 @@ namespace Dekauto.Auth.Service.Services
             if (user == null) throw new ArgumentNullException(nameof(user));
             var userDto = JsonSerializationConvert<User, UserDto>(user);
 
-            userDto.Password = null; // Формируемое Dto (для клиента) не содержит пароля, потому что в БД только хеши
             if (user.Role == null)
             {
                 Console.WriteLine($"WARNING: роль == null у пользователя {user}");
@@ -101,7 +101,7 @@ namespace Dekauto.Auth.Service.Services
             return userDtos;
         }
 
-        public async Task UpdateUserAsync(Guid userId, UserDto updatedUserDto)
+        public async Task UpdateUserAsync(Guid userId, UserDto updatedUserDto, string newPassword = null)
         {
             if (updatedUserDto == null || userId == null) throw new ArgumentNullException("Не все аргументы переданы.");
             if (updatedUserDto.Id != userId) throw new ArgumentException("ID не совпадают.");
@@ -114,11 +114,11 @@ namespace Dekauto.Auth.Service.Services
             // Обновляем поля, которые должны измениться
             user.Login = updatedUserDto.Login;
 
-            // Обновляем пароль, если он был передан (и если необходимо)
-            if (!string.IsNullOrWhiteSpace(updatedUserDto.Password))
+            // Обновляем пароль, если он был передан
+            if (!string.IsNullOrWhiteSpace(newPassword))
             {
                 // Хешируем пароль перед сохранением
-                user.PasswordHash = HashPassword(updatedUserDto.Password);
+                user.PasswordHash = HashPassword(newPassword);
             }
 
             // Обновляем роль пользователя, если нужно (например, по имени роли)
@@ -133,11 +133,11 @@ namespace Dekauto.Auth.Service.Services
             await usersRepository.UpdateAsync(user);
         }
 
-        public async Task AddUserAsync(UserDto userDto)
+        public async Task AddUserAsync(UserDto userDto, string password)
         {
             if (userDto is null) throw new ArgumentNullException(nameof(userDto));
 
-            var passwordHash = HashPassword(userDto.Password);
+            var passwordHash = HashPassword(password);
             var role = await rolesService.GetByRoleNameAsync(userDto.RoleName);
             if (role == null) throw new KeyNotFoundException($"Роль {userDto.RoleName} не найдена");
 

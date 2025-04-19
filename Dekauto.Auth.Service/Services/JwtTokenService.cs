@@ -1,9 +1,13 @@
-﻿using Dekauto.Auth.Service.Domain.Interfaces;
+﻿using Dekauto.Auth.Service.Domain.Entities;
+using Dekauto.Auth.Service.Domain.Entities.Adapters;
+using Dekauto.Auth.Service.Domain.Entities.DTO;
+using Dekauto.Auth.Service.Domain.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Dekauto.Auth.Service.Services
 {
@@ -16,22 +20,23 @@ namespace Dekauto.Auth.Service.Services
         }
 
         // Метод генерации JWT токена
-        public string GenerateToken(string login, Guid userId, string role)
+        public AuthTokensAdapter GenerateToken(UserDto account)
         {
+
             // Создаем список "утверждений" (claims) - это данные, которые будут храниться в токене
             var claims = new List<Claim>
             {
                 // Sub (Subject) - обычно имя пользователя или идентификатор
-                new Claim(JwtRegisteredClaimNames.Sub, login),
+                new Claim(JwtRegisteredClaimNames.Sub, account.Login),
             
                 // Jti (JWT ID) - уникальный идентификатор для каждого токена
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             
                 // Кастомный claim с ID пользователя
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
                 
                 // Добавляем роли пользователя
-                new Claim(ClaimTypes.Role, role)
+                new Claim(ClaimTypes.Role, account.RoleName)
 
             };
             try
@@ -55,7 +60,7 @@ namespace Dekauto.Auth.Service.Services
                 );
 
                 // Преобразуем токен в строку и возвращаем
-                return new JwtSecurityTokenHandler().WriteToken(token);
+                return new AuthTokensAdapter(new JwtSecurityTokenHandler().WriteToken(token), account);
             }
             catch (Exception ex)
             {
@@ -64,7 +69,7 @@ namespace Dekauto.Auth.Service.Services
 
         }
 
-        // Метод проверки токена
+        // Внутренний метод проверки токена
         public ClaimsPrincipal? ValidateToken(string token)
         {
             JwtSecurityTokenHandler tokenHandler;
