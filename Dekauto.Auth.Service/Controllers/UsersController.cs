@@ -1,12 +1,13 @@
 ﻿using Dekauto.Auth.Service.Domain.Entities.DTO;
 using Dekauto.Auth.Service.Domain.Interfaces;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dekauto.Auth.Service.Controllers
 {
     [Route("api/users")]
     [ApiController]
+    [Authorize(Policy = "OnlyAdmin")]
     public class UsersController : ControllerBase
     {
         private readonly IUserAuthService userAuthService;

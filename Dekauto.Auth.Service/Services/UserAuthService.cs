@@ -32,10 +32,10 @@ namespace Dekauto.Auth.Service.Services
 
             var result = hasher.VerifyHashedPassword(userAccount, userAccount.PasswordHash, password);
 
-            // Проверка данных и выдача JWT + данных пользователя, если успех
+            // Проверка данных и выдача at + rt + данных пользователя, если успех
             if (result == PasswordVerificationResult.Success || result == PasswordVerificationResult.SuccessRehashNeeded)
             {
-                var tokensAdapter = jwtTokenService.GenerateToken(ToDto(userAccount));
+                var tokensAdapter = jwtTokenService.GenerateTokens(ToDto(userAccount));
                 return tokensAdapter;
             }
             else

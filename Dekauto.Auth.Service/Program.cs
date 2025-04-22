@@ -4,6 +4,7 @@ using Dekauto.Auth.Service.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -35,7 +36,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
         };
     });
-builder.Services.AddTransient<IJwtTokenService, JwtTokenService>();
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+// Политики доступа к эндпоинтам
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("OnlyAdmin", policy => policy.RequireRole("Администратор"));
+
 builder.Services.AddAuthorization();
 // Add services to the container.
 builder.Services.AddControllers()
@@ -44,7 +50,37 @@ builder.Services.AddControllers()
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Добавление swagger с авторизацией
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Введите JWT токен (без слова 'Bearer')",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+});
 builder.Services.AddTransient<IUserAuthService, UserAuthService>();
 builder.Services.AddTransient<IUsersRepository, UsersRepository>();
 builder.Services.AddTransient<IRolesRepository, RolesRepository>();

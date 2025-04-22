@@ -18,16 +18,15 @@ namespace Dekauto.Auth.Service.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> AuthenticateAndGetTokenAsync([FromBody] LoginAdapter loginUser)
+        public async Task<ActionResult> AuthenticateAndGetTokensAsync([FromBody] LoginAdapter loginUser)
         {
 
             try
             {
                 if (loginUser is null) throw new ArgumentNullException(nameof(loginUser));
-                // TODO: Попытка авторизации и выдача JWT токена
+                // TODO: Попытка авторизации и выдача JWT access токена и refresh токена
                 var tokensAdapter = await userAuthService.AuthenticateAndGetTokensAsync(loginUser.Login, loginUser.Password);
-                //if (tokensAdapter == null) throw new Exception("JWT-токен не получен.");
-                // TODO: Управление refresh-токеном
+                //if (tokensAdapter == null) throw new Exception("Токены доступа не получены.");
 
                 return Ok(tokensAdapter);
             }
