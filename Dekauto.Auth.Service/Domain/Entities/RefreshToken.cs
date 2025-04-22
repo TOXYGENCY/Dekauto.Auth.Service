@@ -4,7 +4,6 @@
     {
         public string Token { get; set; }
         public Guid UserId { get; set; }
-        public DateTime Created { get; set; }
-        public DateTime Expires { get; set; }
+        public DateTime? Expires { get; set; }
     }
 }

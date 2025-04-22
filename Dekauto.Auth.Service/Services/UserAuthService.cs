@@ -5,6 +5,7 @@ using Dekauto.Auth.Service.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Dekauto.Auth.Service.Services
 {
@@ -146,6 +147,28 @@ namespace Dekauto.Auth.Service.Services
             newUser.RoleId = role.Id;
 
             await usersRepository.AddAsync(newUser);
+        }
+
+        public async Task<AuthTokensAdapter> RefreshTokensAsync(RefreshToken refreshToken)
+        {
+            if (refreshToken is null)
+            {
+                throw new ArgumentNullException(nameof(refreshToken));
+            }
+
+            var user = await usersRepository.GetByIdAsync(refreshToken.UserId);
+            var result = await jwtTokenService.TryRefreshTokensAsync(refreshToken.Token, ToDto(user));
+            AuthTokensAdapter? newTokens;
+
+            if (result.Success)
+            {
+                newTokens = result.Tokens;
+            } else
+            {
+                newTokens = null;
+            }
+            
+            return newTokens;
         }
     }
 }

@@ -62,7 +62,7 @@ namespace Dekauto.Auth.Service.Services
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
                 // Вычисляем время истечения токена
-                var expires = DateTime.Now.AddMinutes(Convert.ToDouble(configuration["Jwt:ExpireMinutes"]));
+                var expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(configuration["Jwt:ExpireMinutes"]));
 
                 // Создаем сам JWT токен
                 var token = new JwtSecurityToken(
@@ -90,8 +90,7 @@ namespace Dekauto.Auth.Service.Services
             {
                 Token = Guid.NewGuid().ToString("N"),
                 UserId = userId,
-                Expires = DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:RefreshTokenExpireDays"] ?? "7")),
-                Created = DateTime.UtcNow
+                Expires = DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:RefreshTokenExpireDays"] ?? "7"))
             };
 
             refreshTokens.AddOrUpdate(refreshToken.Token, refreshToken, (k, v) => refreshToken);

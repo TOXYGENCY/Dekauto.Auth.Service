@@ -33,7 +33,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+            ClockSkew = TimeSpan.Zero
         };
     });
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
@@ -47,7 +48,6 @@ builder.Services.AddAuthorization();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
-builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 // Добавление swagger с авторизацией
@@ -105,6 +105,12 @@ var app = builder.Build();
 // Явно указываем порты (для Docker)
 app.Urls.Add("http://*:5507");
 
+// 1. Аутентификация (JWT, куки и т.д.)
+app.UseAuthentication();
+
+// 2. Авторизация (проверка атрибутов [Authorize])
+app.UseAuthorization();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -120,8 +126,6 @@ else
 }
 
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 

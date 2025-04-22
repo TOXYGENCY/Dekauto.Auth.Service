@@ -1,4 +1,6 @@
-﻿using Dekauto.Auth.Service.Domain.Entities.Adapters;
+﻿using Dekauto.Auth.Service.Domain.Entities;
+using Dekauto.Auth.Service.Domain.Entities.Adapters;
+using Dekauto.Auth.Service.Domain.Entities.DTO;
 using Dekauto.Auth.Service.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +29,7 @@ namespace Dekauto.Auth.Service.Controllers
                 // TODO: Попытка авторизации и выдача JWT access токена и refresh токена
                 var tokensAdapter = await userAuthService.AuthenticateAndGetTokensAsync(loginUser.Login, loginUser.Password);
                 //if (tokensAdapter == null) throw new Exception("Токены доступа не получены.");
+                if (tokensAdapter is null) return StatusCode(StatusCodes.Status401Unauthorized);
 
                 return Ok(tokensAdapter);
             }
@@ -44,10 +47,30 @@ namespace Dekauto.Auth.Service.Controllers
             }
         }
 
-        // Метод, который будет кидать ошибку 401, если токен невалиден - фронт разлогинит пользователя
+        [HttpPost("refresh")]
+        public async Task<ActionResult> RefreshTokensAsync(RefreshToken refreshToken)
+        {
+
+            try
+            {
+                if (refreshToken is null)
+                {
+                    throw new ArgumentNullException(nameof(refreshToken));
+                }
+
+                var newTokens = await userAuthService.RefreshTokensAsync(refreshToken);
+                return Ok(newTokens);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { ex.Message, ex.StackTrace });
+            }
+        }
+
+        // Метод, который будет кидать ошибку 401, если токен невалиден (проверка по параметрам из Program.cs)
         [HttpGet("validate")]
-        [Authorize] // Отсюда будет вылетать 401 Unauthorized
-        public IActionResult Validate()
+        [Authorize] // Здесь происходит проверка и будет вылетать 401 Unauthorized
+        public IActionResult ValidateAccessToken()
         {
             // Доступ к данным пользователя User (из Authorize) из токена
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

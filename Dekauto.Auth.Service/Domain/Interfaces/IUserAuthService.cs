@@ -10,6 +10,6 @@ namespace Dekauto.Auth.Service.Domain.Interfaces
         string HashPassword(string password);
         Task AddUserAsync(UserDto userDto, string password);
         Task UpdateUserAsync(Guid userId, UserDto updatedUserDto, string newPassword = null);
-
+        Task<AuthTokensAdapter> RefreshTokensAsync(RefreshToken refreshToken);
     }
 }
