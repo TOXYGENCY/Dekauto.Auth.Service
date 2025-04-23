@@ -107,8 +107,8 @@ namespace Dekauto.Auth.Service.Services
 
             // Удаляем все существующие refresh-токены для этого пользователя
             var tokensToRemove = refreshTokens
-                .Where(kvp => kvp.Value.UserId == userId)
-                .Select(kvp => kvp.Key)
+                .Where(elem => elem.Value.UserId == userId)
+                .Select(elem => elem.Key)
                 .ToList();
 
             foreach (var tokenKey in tokensToRemove)
