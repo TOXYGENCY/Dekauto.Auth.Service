@@ -1,19 +1,16 @@
-﻿using Dekauto.Auth.Service.Domain.Entities.DTO;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 
-namespace Dekauto.Auth.Service.Domain.Entities.Adapters
+namespace Dekauto.Auth.Service.Domain.Entities.DTO
 {
-    public class AuthTokensAdapter
+    public class AccessTokenDto
     {
         public string AccessToken { get; }
-        public string RefreshToken { get; }
-        public UserDto User { get; }
         public DateTime AccessTokenExpiry { get; }
+        public UserDto User { get; }
 
-        public AuthTokensAdapter(string accessToken, string refreshToken, UserDto userDto)
+        public AccessTokenDto(string accessToken, UserDto userDto)
         {
             AccessToken = accessToken;
-            RefreshToken = refreshToken;
             User = userDto;
 
             // вычисление даты истечения access token

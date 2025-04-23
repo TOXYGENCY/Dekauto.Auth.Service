@@ -1,11 +1,10 @@
 ﻿using Dekauto.Auth.Service.Domain.Entities;
-using Dekauto.Auth.Service.Domain.Entities.Adapters;
 using Dekauto.Auth.Service.Domain.Entities.DTO;
+using Dekauto.Auth.Service.Domain.Entities.Models;
 using Dekauto.Auth.Service.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Claims;
+using System.Collections.Concurrent;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Dekauto.Auth.Service.Services
 {
@@ -14,17 +13,20 @@ namespace Dekauto.Auth.Service.Services
         private readonly IUsersRepository usersRepository;
         private readonly IRolesService rolesService;
         private readonly IJwtTokenService jwtTokenService;
+        private readonly IConfiguration configuration;
         private readonly PasswordHasher<object> hasher; // object, а не User, потому что в этой реализации .HashPassword аргумент user не используется
 
-        public UserAuthService(IUsersRepository usersRepository, IRolesService rolesService, IJwtTokenService jwtTokenService)
+        public UserAuthService(IUsersRepository usersRepository, IRolesService rolesService, 
+            IJwtTokenService jwtTokenService, IConfiguration configuration)
         {
             this.usersRepository = usersRepository;
             this.jwtTokenService = jwtTokenService;
+            this.configuration = configuration;
             this.rolesService = rolesService;
             hasher = new PasswordHasher<object>();
         }
 
-        public async Task<AuthTokensAdapter> AuthenticateAndGetTokensAsync(string login, string password)
+        public async Task<TokensModel> AuthenticateAndGetTokensAsync(string login, string password)
         {
             if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password)) throw new ArgumentException();
 
@@ -32,17 +34,42 @@ namespace Dekauto.Auth.Service.Services
             if (userAccount == null) throw new KeyNotFoundException($"Пользователь {login} не найден");
 
             var result = hasher.VerifyHashedPassword(userAccount, userAccount.PasswordHash, password);
-
             // Проверка данных и выдача at + rt + данных пользователя, если успех
             if (result == PasswordVerificationResult.Success || result == PasswordVerificationResult.SuccessRehashNeeded)
             {
-                var tokensAdapter = jwtTokenService.GenerateTokens(ToDto(userAccount));
-                return tokensAdapter;
+                var tokensModel = jwtTokenService.GenerateTokens(ToDto(userAccount));
+                return tokensModel;
             }
             else
             {
                 return null;
             }
+        }
+
+
+        // Передача refresh токена только через HttpOnly куки, недоступный для JS. (вызывать в контроллере)
+        public void SetRefreshTokenCookie(HttpResponse response, string refreshToken)
+        {
+            if (response is null)
+            {
+                throw new ArgumentNullException(nameof(response));
+            }
+
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                throw new ArgumentException($"'{nameof(refreshToken)}' cannot be null or empty.", nameof(refreshToken));
+            }
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:RefreshTokenExpireDays"] ?? "7")),
+                Secure = Boolean.Parse(configuration["UsingHttps"]), // HTTPS
+                SameSite = SameSiteMode.Strict, // Защита от CSRF
+                Path = "/api/auth/refresh"
+            };
+
+            response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
         }
 
         // хеширование пароля
@@ -149,7 +176,7 @@ namespace Dekauto.Auth.Service.Services
             await usersRepository.AddAsync(newUser);
         }
 
-        public async Task<AuthTokensAdapter> RefreshTokensAsync(RefreshToken refreshToken)
+        public async Task<TokensModel> RefreshTokensAsync(RefreshToken refreshToken)
         {
             if (refreshToken is null)
             {
@@ -158,7 +185,7 @@ namespace Dekauto.Auth.Service.Services
 
             var user = await usersRepository.GetByIdAsync(refreshToken.UserId);
             var result = await jwtTokenService.TryRefreshTokensAsync(refreshToken.Token, ToDto(user));
-            AuthTokensAdapter? newTokens;
+            TokensModel? newTokens;
 
             if (result.Success)
             {
@@ -169,6 +196,16 @@ namespace Dekauto.Auth.Service.Services
             }
             
             return newTokens;
+        }
+
+        public RefreshToken? GetRefreshToken(string refreshTokenString)
+        {
+            return jwtTokenService.GetRefreshToken(refreshTokenString);
+        }
+
+        public ConcurrentDictionary<string, RefreshToken>? GetDict()
+        {
+            return jwtTokenService.GetDict();
         }
     }
 }
