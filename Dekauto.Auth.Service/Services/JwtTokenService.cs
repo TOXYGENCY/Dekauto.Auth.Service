@@ -105,6 +105,17 @@ namespace Dekauto.Auth.Service.Services
                 Expires = DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:RefreshTokenExpireDays"] ?? "7"))
             };
 
+            // Удаляем все существующие refresh-токены для этого пользователя
+            var tokensToRemove = refreshTokens
+                .Where(kvp => kvp.Value.UserId == userId)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var tokenKey in tokensToRemove)
+            {
+                refreshTokens.TryRemove(tokenKey, out _);
+            }
+
             refreshTokens.TryAdd(newRefreshToken.Token, newRefreshToken);
             return newRefreshToken;
         }
