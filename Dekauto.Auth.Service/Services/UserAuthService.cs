@@ -56,7 +56,15 @@ namespace Dekauto.Auth.Service.Services
                 Expires = DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:RefreshTokenExpireDays"] ?? "7")),
                 Secure = Boolean.Parse(configuration["UsingHttps"]), // HTTPS
                 SameSite = SameSiteMode.Strict, // Защита от CSRF
-                Path = "/api/auth/refresh"
+                Path = "/api/auth"
+            };
+
+            // Отдельные настройки для удаления
+            var deleteOptions = new CookieOptions
+            {
+                Path = "/", // Широкий путь для гарантированного удаления
+                Secure = true, // Обеспечиваем удаление и для HTTP, и для HTTPS
+                SameSite = SameSiteMode.None // Для максимальной совместимости при удалении
             };
 
             if (response is null)
@@ -70,7 +78,7 @@ namespace Dekauto.Auth.Service.Services
             }
 
             // Удаляем старую куку перед установкой новой
-            response.Cookies.Delete("refreshToken", cookieOptions);
+            response.Cookies.Delete("refreshToken", deleteOptions);
             // Ставим новую куку
             response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
         }

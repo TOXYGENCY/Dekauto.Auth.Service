@@ -102,21 +102,15 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
+app.UseCors("AngularLocalhost");
+
 // явно указываем порты (дл€ Docker)
 app.Urls.Add("http://*:5507");
-
-// 1. јутентификаци€ (JWT, куки и т.д.)
-app.UseAuthentication();
-
-// 2. јвторизаци€ (проверка атрибутов [Authorize])
-app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
-    app.UseCors("AngularLocalhost");
 
 }
 else
@@ -124,6 +118,12 @@ else
     app.Urls.Add("https://*:5508");
     app.UseHttpsRedirection(); // без https редиректа в dev-версии
 }
+
+// јутентификаци€ (JWT, куки и т.д.)
+app.UseAuthentication();
+
+// јвторизаци€ (проверка атрибутов [Authorize])
+app.UseAuthorization();
 
 app.UseHttpsRedirection();
 

@@ -67,8 +67,8 @@ namespace Dekauto.Auth.Service.Controllers
 			}
 		}
 
-        [HttpPost("refresh")]
-        public async Task<ActionResult> RefreshTokensAsync()
+        [HttpPost("{userId}/refresh")]
+        public async Task<ActionResult> RefreshTokensAsync(Guid userId)
         {
             try
             {
@@ -76,7 +76,7 @@ namespace Dekauto.Auth.Service.Controllers
                 var refreshTokenString = Request.Cookies["refreshToken"];
                 if (String.IsNullOrEmpty(refreshTokenString))
                 {
-                    return StatusCode(StatusCodes.Status401Unauthorized, "Refresh token is missing");
+                    return StatusCode(StatusCodes.Status400BadRequest, "Refresh token is missing");
                 }
 				var fullRefreshToken = userAuthService.GetRefreshToken(refreshTokenString);
                 if (fullRefreshToken is null)
