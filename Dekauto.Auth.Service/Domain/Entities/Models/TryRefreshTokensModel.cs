@@ -1,6 +1,4 @@
-﻿using Dekauto.Auth.Service.Domain.Entities.DTO;
-
-namespace Dekauto.Auth.Service.Domain.Entities.Models
+﻿namespace Dekauto.Auth.Service.Domain.Entities.Models
 {
     public class TryRefreshTokensModel
     {

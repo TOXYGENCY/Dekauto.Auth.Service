@@ -14,7 +14,7 @@ namespace Dekauto.Auth.Service.Controllers
         private readonly IUsersRepository usersRepository;
         private readonly ILogger<UserAuthController> logger;
 
-        public UsersController(IUserAuthService userAuthService, IUsersRepository usersRepository, 
+        public UsersController(IUserAuthService userAuthService, IUsersRepository usersRepository,
             ILogger<UserAuthController> logger)
         {
             this.userAuthService = userAuthService;

@@ -13,7 +13,7 @@ public partial class User
     public Guid RoleId { get; set; }
 
     public virtual Role Role { get; set; } = null!;
-    
+
     [JsonIgnore]
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
 }

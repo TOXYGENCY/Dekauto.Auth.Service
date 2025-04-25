@@ -1,7 +1,6 @@
 ﻿using Dekauto.Auth.Service.Domain.Entities;
 using Dekauto.Auth.Service.Domain.Entities.DTO;
 using Dekauto.Auth.Service.Domain.Interfaces;
-using Dekauto.Auth.Service.Infrastructure;
 using System.Text.Json;
 
 namespace Dekauto.Auth.Service.Services

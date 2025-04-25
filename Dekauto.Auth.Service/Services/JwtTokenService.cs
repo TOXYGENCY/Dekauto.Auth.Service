@@ -1,16 +1,12 @@
 ﻿using Dekauto.Auth.Service.Domain.Entities;
-using Dekauto.Auth.Service.Domain.Entities.Adapters;
 using Dekauto.Auth.Service.Domain.Entities.DTO;
 using Dekauto.Auth.Service.Domain.Entities.Models;
 using Dekauto.Auth.Service.Domain.Interfaces;
-using Dekauto.Auth.Service.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Dekauto.Auth.Service.Services
 {
@@ -130,7 +126,7 @@ namespace Dekauto.Auth.Service.Services
             if (!refreshTokens.TryGetValue(refreshToken, out var fullRefreshToken))
             {
                 return null;
-            } 
+            }
             return fullRefreshToken;
         }
 

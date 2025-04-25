@@ -16,7 +16,7 @@ namespace Dekauto.Auth.Service.Services
         private readonly IConfiguration configuration;
         private readonly PasswordHasher<object> hasher; // object, а не User, потому что в этой реализации .HashPassword аргумент user не используется
 
-        public UserAuthService(IUsersRepository usersRepository, IRolesService rolesService, 
+        public UserAuthService(IUsersRepository usersRepository, IRolesService rolesService,
             IJwtTokenService jwtTokenService, IConfiguration configuration)
         {
             this.usersRepository = usersRepository;
@@ -120,7 +120,8 @@ namespace Dekauto.Auth.Service.Services
             {
                 Console.WriteLine($"WARNING: роль == null у пользователя {user}");
                 userDto.RoleName = null;
-            } else
+            }
+            else
             {
                 userDto.RoleName = user.Role.Name;
             }
@@ -201,11 +202,12 @@ namespace Dekauto.Auth.Service.Services
             if (result.Success)
             {
                 newTokens = result.Tokens;
-            } else
+            }
+            else
             {
                 newTokens = null;
             }
-            
+
             return newTokens;
         }
 
