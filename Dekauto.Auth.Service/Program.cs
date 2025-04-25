@@ -146,6 +146,7 @@ try
     {
         app.Urls.Add("https://*:5508");
         app.UseHttpsRedirection();
+        Log.Information("Включен HTTPS.");
     }
 
     // Аутентификация (JWT, куки и т.д.)

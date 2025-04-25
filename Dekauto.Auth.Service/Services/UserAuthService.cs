@@ -54,7 +54,7 @@ namespace Dekauto.Auth.Service.Services
             {
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:RefreshTokenExpireDays"] ?? "7")),
-                Secure = Boolean.Parse(configuration["UsingHttps"]), // HTTPS
+                Secure = Boolean.Parse(configuration["UseHttps"]), // HTTPS
                 SameSite = SameSiteMode.Strict, // Защита от CSRF
                 Path = "/api/auth"
             };
