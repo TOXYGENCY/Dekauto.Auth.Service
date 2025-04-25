@@ -6,7 +6,8 @@
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ConnectionStrings:Main": "Host=localhost;Port=5432;Database=Dekauto;Username=postgres;Password=;"
+        "ConnectionStrings:Main": "Host=localhost;Port=5432;Database=Dekauto;Username=postgres;Password=;",
+        "Jwt__Key": "this_is_random_dev_key_over_32_symbols"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5507"

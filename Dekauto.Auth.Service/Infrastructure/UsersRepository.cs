@@ -43,7 +43,7 @@ namespace Dekauto.Auth.Service.Infrastructure
         public async Task UpdateAsync(User updatedUser)
         {
             var currentUser = await сontext.Users.FirstOrDefaultAsync(s => s.Id == updatedUser.Id);
-            if (currentUser == null) throw new KeyNotFoundException($"User {updatedUser.Id} not found");
+            if (currentUser == null) throw new KeyNotFoundException($"Пользователь {updatedUser.Id} не найден");
 
             сontext.Entry(currentUser).CurrentValues.SetValues(updatedUser);
             await сontext.SaveChangesAsync();

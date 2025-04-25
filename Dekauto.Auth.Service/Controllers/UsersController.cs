@@ -12,11 +12,14 @@ namespace Dekauto.Auth.Service.Controllers
     {
         private readonly IUserAuthService userAuthService;
         private readonly IUsersRepository usersRepository;
+        private readonly ILogger<UserAuthController> logger;
 
-        public UsersController(IUserAuthService userAuthService, IUsersRepository usersRepository)
+        public UsersController(IUserAuthService userAuthService, IUsersRepository usersRepository, 
+            ILogger<UserAuthController> logger)
         {
             this.userAuthService = userAuthService;
             this.usersRepository = usersRepository;
+            this.logger = logger;
         }
 
         // INFO: может вернуть пустой список
@@ -31,7 +34,9 @@ namespace Dekauto.Auth.Service.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { ex.Message, ex.StackTrace });
+                var mes = "Возникла непредвиденная ошибка при получении всех пользователей. Обратитесь к администратору или попробуйте позже.";
+                logger.LogError(ex, mes);
+                return StatusCode(StatusCodes.Status500InternalServerError, mes);
             }
         }
 
@@ -43,11 +48,14 @@ namespace Dekauto.Auth.Service.Controllers
                 var user = await usersRepository.GetByIdAsync(userId);
                 if (user == null) return StatusCode(StatusCodes.Status404NotFound);
                 var userDto = userAuthService.ToDto(user);
+
                 return Ok(userDto);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { ex.Message, ex.StackTrace });
+                var mes = "Возникла непредвиденная ошибка при поиске пользователя. Обратитесь к администратору или попробуйте позже.";
+                logger.LogError(ex, mes);
+                return StatusCode(StatusCodes.Status500InternalServerError, mes);
             }
         }
 
@@ -57,11 +65,21 @@ namespace Dekauto.Auth.Service.Controllers
             try
             {
                 await userAuthService.UpdateUserAsync(userId, updatedUserDto);
+                logger.LogInformation($"Обновлен пользователь {updatedUserDto.Login} (Роль: {updatedUserDto.RoleName})");
+
                 return Ok();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                var mes = "Пользователь не найден.";
+                logger.LogError(ex, mes);
+                return StatusCode(StatusCodes.Status500InternalServerError, mes);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { ex.Message, ex.StackTrace });
+                var mes = "Возникла непредвиденная ошибка при обновлении пользователя. Обратитесь к администратору или попробуйте позже.";
+                logger.LogError(ex, mes);
+                return StatusCode(StatusCodes.Status500InternalServerError, mes);
             }
         }
 
@@ -71,13 +89,16 @@ namespace Dekauto.Auth.Service.Controllers
         {
             try
             {
-                if (userId == null) return StatusCode(StatusCodes.Status400BadRequest);
                 await usersRepository.DeleteAsync(userId);
+                logger.LogInformation($"Удален пользователь с id = {userId}");
+
                 return Ok();
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { ex.Message, ex.StackTrace });
+                var mes = "Возникла непредвиденная ошибка при удалении пользователя. Обратитесь к администратору или попробуйте позже.";
+                logger.LogError(ex, mes);
+                return StatusCode(StatusCodes.Status500InternalServerError, mes);
             }
         }
 
@@ -86,12 +107,32 @@ namespace Dekauto.Auth.Service.Controllers
         {
             try
             {
+                if (userDto is null)
+                {
+                    throw new ArgumentNullException(nameof(userDto));
+                }
+
+                if (string.IsNullOrEmpty(password))
+                {
+                    throw new ArgumentNullException($"'{nameof(password)}' cannot be null or empty.", nameof(password));
+                }
+
                 await userAuthService.AddUserAsync(userDto, password);
+                logger.LogInformation($"Создан пользователь {userDto.Login} (Роль: {userDto.RoleName})");
+
                 return Ok();
+            }
+            catch (ArgumentNullException ex)
+            {
+                var mes = "Необходимые данные для добавления пользователя не получены. Обратитесь к администратору или попробуйте позже.";
+                logger.LogError(ex, mes);
+                return StatusCode(StatusCodes.Status500InternalServerError, mes);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { ex.Message, ex.StackTrace });
+                var mes = "Возникла непредвиденная ошибка при добавлении пользователя. Обратитесь к администратору или попробуйте позже.";
+                logger.LogError(ex, mes);
+                return StatusCode(StatusCodes.Status500InternalServerError, mes);
             }
         }
     }
