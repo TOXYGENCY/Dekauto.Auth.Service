@@ -111,6 +111,7 @@ try
     builder.Services.AddTransient<IUsersRepository, UsersRepository>();
     builder.Services.AddTransient<IRolesRepository, RolesRepository>();
     builder.Services.AddTransient<IRolesService, RolesService>();
+    builder.Services.AddSingleton<IRequestMetricsService, RequestMetricsService>();
     builder.Services.AddDbContext<DekautoContext>(options =>
         options.UseNpgsql(connectionString)
         .UseLazyLoadingProxies());
@@ -156,6 +157,8 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
+
+    app.UseMetricsMiddleware(); // Метрики
 
     Log.Information("Запускается Development-версия приложения. Активация Swagger...");
     app.Run();
