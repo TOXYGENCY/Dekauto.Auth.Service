@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Dekauto.Auth.Service.Controllers
 {
-    [Route("api/metrics")]
+    [Route("api/auth/metrics")]
     [ApiController]
     public class MetricsController : ControllerBase
     {
@@ -18,7 +18,7 @@ namespace Dekauto.Auth.Service.Controllers
             this.context = context;
             this.requestMetricsService = requestMetricsService;
         }
-        [Authorize(Policy = "OnlyAdmin")]
+
         [Route("healthcheck")]
         [HttpGet]
         public async Task<IActionResult> HealthCheckAsync() 

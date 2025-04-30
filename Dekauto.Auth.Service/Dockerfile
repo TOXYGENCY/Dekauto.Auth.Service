@@ -1,21 +1,28 @@
 # See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
+# Предустановка curl внутри линукса
+USER root
+# Обновление и установка curl
+RUN apk update && apk add --no-cache curl
 USER $APP_UID
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
 
+
+# HTTP и HTTPS порты
+EXPOSE 5507 5508 
+
+ENV ASPNETCORE_ENVIRONMENT=Development
 
 # This stage is used to build the service project
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Dekauto.Auth.Service/Dekauto.Auth.Service.csproj", "Dekauto.Auth.Service/"]
-RUN dotnet restore "./Dekauto.Auth.Service/Dekauto.Auth.Service.csproj"
+COPY ["Dekauto.Auth.Service.csproj", "."]
+RUN dotnet restore "./Dekauto.Auth.Service.csproj"
 COPY . .
-WORKDIR "/src/Dekauto.Auth.Service"
+WORKDIR "/src/."
 RUN dotnet build "./Dekauto.Auth.Service.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage

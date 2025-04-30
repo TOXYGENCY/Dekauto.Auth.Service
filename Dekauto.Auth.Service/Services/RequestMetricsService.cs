@@ -11,11 +11,9 @@ namespace Dekauto.Auth.Service.Services
         private int maxPrevCounters = 5; // Максимум значений в хранении
         private int currentCounter = 0;
         private int period = 0;
-        private readonly IConfiguration config;
 
         public RequestMetricsService(IConfiguration config)
         {
-            this.config = config;
             period = config.GetValue<int?>("Metrics:RequestCounter:Seconds") ?? 60;
 
             if (this.counterQueue == null) this.counterQueue = new ConcurrentQueue<int>();

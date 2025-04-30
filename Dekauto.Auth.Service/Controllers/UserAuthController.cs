@@ -37,22 +37,22 @@ namespace Dekauto.Auth.Service.Controllers
             }
             catch (KeyNotFoundException ex)
             {
-                var mes = $"Пользователь {loginUser.Login} не найден при попытке аутентификации.";
-                logger.LogWarning(ex, mes);
-                return StatusCode(StatusCodes.Status404NotFound, mes);
+                logger.LogWarning(ex, $"User {loginUser.Login} was not found during authentication attempt.");
+                return StatusCode(StatusCodes.Status404NotFound,
+                    $"Пользователь {loginUser.Login} не найден при попытке аутентификации.");
             }
             catch (ArgumentNullException ex)
             {
-                var mes = "Не получены данные входа в аккаунт. Обратитесь к администратору или попробуйте снова.";
-                logger.LogError(ex, mes);
+                logger.LogError(ex, "No account login data was received.");
                 // Но может быть и InternalServerError
-                return StatusCode(StatusCodes.Status400BadRequest, mes);
+                return StatusCode(StatusCodes.Status400BadRequest,
+                    "Не получены данные входа в аккаунт. Обратитесь к администратору или попробуйте снова.");
             }
             catch (Exception ex)
             {
-                var mes = "Возникла непредвиденная ошибка сервера. Обратитесь к администратору или попробуйте позже.";
-                logger.LogError(ex, mes);
-                return StatusCode(StatusCodes.Status500InternalServerError, mes);
+                logger.LogError(ex, "An unexpected server error has occurred.");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Возникла непредвиденная ошибка сервера. Обратитесь к администратору или попробуйте позже.");
             }
         }
 
@@ -65,24 +65,24 @@ namespace Dekauto.Auth.Service.Controllers
                 var refreshTokenString = Request.Cookies["refreshToken"];
                 if (String.IsNullOrEmpty(refreshTokenString))
                 {
-                    var mes = "Пожалуйста, войдите снова. (Refresh-токен отсутствует)";
-                    logger.LogError(null, mes);
-                    return StatusCode(StatusCodes.Status400BadRequest, mes);
+                    logger.LogError(null, "Refresh token is missing");
+                    return StatusCode(StatusCodes.Status400BadRequest,
+                        "Пожалуйста, войдите снова. (Refresh-токен отсутствует)");
                 }
                 var fullRefreshToken = userAuthService.GetRefreshToken(refreshTokenString);
                 if (fullRefreshToken is null)
                 {
-                    var mes = "Пожалуйста, войдите снова. (Refresh-токен не найден в реестре)";
-                    logger.LogError(null, mes);
-                    return StatusCode(StatusCodes.Status401Unauthorized, mes);
+                    logger.LogError(null, "Refresh token not found in the registry");
+                    return StatusCode(StatusCodes.Status401Unauthorized,
+                        "Пожалуйста, войдите снова. (Refresh-токен не найден в реестре)");
                 }
 
                 var newTokens = await userAuthService.RefreshTokensAsync(fullRefreshToken);
                 if (newTokens is null)
                 {
-                    var mes = "Пожалуйста, войдите снова. (Refresh-токен просрочен)";
-                    logger.LogError(null, mes);
-                    return StatusCode(StatusCodes.Status401Unauthorized, mes);
+                    logger.LogError(null, "Refresh token is expired");
+                    return StatusCode(StatusCodes.Status401Unauthorized,
+                        "Пожалуйста, войдите снова. (Refresh-токен просрочен)");
                 }
 
                 // Устанавливаем rt в HttpOnly cookie
@@ -92,15 +92,15 @@ namespace Dekauto.Auth.Service.Controllers
             }
             catch (ArgumentNullException ex)
             {
-                var mes = "Не переданы необходимые данные. Обратитесь к администратору или попробуйте позже.";
-                logger.LogError(ex, mes);
-                return StatusCode(StatusCodes.Status400BadRequest, mes);
+                logger.LogError(ex, "The required data is not provided.");
+                return StatusCode(StatusCodes.Status400BadRequest,
+                    "Не переданы необходимые данные. Обратитесь к администратору или попробуйте позже");
             }
             catch (Exception ex)
             {
-                var mes = "Возникла непредвиденная ошибка сервера. Обратитесь к администратору или попробуйте позже.";
-                logger.LogError(ex, mes);
-                return StatusCode(StatusCodes.Status500InternalServerError, mes);
+                logger.LogError(ex, "An unexpected server error has occurred.");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Возникла непредвиденная ошибка сервера. Обратитесь к администратору или попробуйте позже.");
             }
         }
 

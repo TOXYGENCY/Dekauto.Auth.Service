@@ -13,11 +13,15 @@ using System.Text.Json.Serialization;
 // Настройка логгера Serilog
 Log.Logger = new LoggerConfiguration()
 .MinimumLevel.Information()
-.WriteTo.Console(outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}")
-.WriteTo.File("logs/Dekauto-Auth-.log", outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}", rollingInterval: RollingInterval.Day,
+.WriteTo.Console(
+    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}")
+.WriteTo.File("logs/Dekauto-Auth-.log", 
+    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}", 
+    rollingInterval: RollingInterval.Day,
     rollOnFileSizeLimit: true,
     fileSizeLimitBytes: 10485760, // Ограничение на размер одного лога 10 MB
-    retainedFileCountLimit: 31) // может быть 31 файл с последними логами, перед тем, как они будут удаляться
+    retainedFileCountLimit: 31, // может быть 31 файл с последними логами, перед тем, как они будут удаляться
+    encoding: Encoding.UTF8) 
 .CreateLogger();
 
 try
@@ -37,7 +41,7 @@ try
     var jwtKey = builder.Configuration["Jwt:Key"];
     if (string.IsNullOrEmpty(jwtKey) || jwtKey.Length < 32)
     {
-        var mes = "Неверный секретный ключ для JWT токенов - необходимо не менее 32 символов.";
+        var mes = "Invalid secret key for JWT tokens - needs to be at least 32 characters long.";
         Log.Fatal(mes);
         throw new InvalidOperationException(mes);
     }
@@ -65,6 +69,7 @@ try
         });
     builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
+    // TODO: настроить связь между латинскими названиями 
     // Политики доступа к эндпоинтам
     builder.Services.AddAuthorizationBuilder()
         .AddPolicy("OnlyAdmin", policy => policy.RequireRole("Администратор"));
@@ -81,7 +86,7 @@ try
     {
         c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
-            Description = "Введите JWT токен (без слова 'Bearer')",
+            Description = "Input JWT token (without 'Bearer')",
             Name = "Authorization",
             In = ParameterLocation.Header,
             Type = SecuritySchemeType.Http,
@@ -125,7 +130,7 @@ try
     }));
 
 
-    Log.Information("Сборка приложения...");
+    Log.Information("Building the application...");
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
@@ -137,7 +142,7 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        Log.Warning("Запускается Development-версия приложения. Активация Swagger...");
+        Log.Warning("The Development version of the application is started. Swagger activation...");
         app.UseSwagger();
         app.UseSwaggerUI();
     }
@@ -147,7 +152,7 @@ try
     {
         app.Urls.Add("https://*:5508");
         app.UseHttpsRedirection();
-        Log.Information("Включен HTTPS.");
+        Log.Information("Enabled HTTPS.");
     }
 
     // Аутентификация (JWT, куки и т.д.)
@@ -160,12 +165,12 @@ try
 
     app.UseMetricsMiddleware(); // Метрики
 
-    Log.Information("Запускается Development-версия приложения. Активация Swagger...");
+    Log.Information("Application startup...");
     app.Run();
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "В приложении возникла непредвиденная критическая ошибка.");
+    Log.Fatal(ex, "An unexpected Fatal error has occurred in the application.");
 }
 finally
 {
