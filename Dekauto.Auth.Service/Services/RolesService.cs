@@ -30,8 +30,8 @@ namespace Dekauto.Auth.Service.Services
         {
             if (roleDto == null) throw new ArgumentNullException(nameof(roleDto));
 
-            var role = await rolesRepository.GetByRoleNameAsync(roleDto.Name);
-            if (role == null) throw new KeyNotFoundException($"Роль {roleDto.Name} не найдена");
+            var role = await rolesRepository.GetByRoleNameAsync(roleDto.EngName);
+            if (role == null) throw new KeyNotFoundException($"Роль {roleDto.EngName} не найдена");
 
             return role;
         }

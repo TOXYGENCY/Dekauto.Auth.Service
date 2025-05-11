@@ -65,7 +65,7 @@ namespace Dekauto.Auth.Service.Controllers
             try
             {
                 await userAuthService.UpdateUserAsync(userId, updatedUserDto);
-                logger.LogInformation($"User {updatedUserDto.Login} updated (Role: {updatedUserDto.RoleName})");
+                logger.LogInformation($"User {updatedUserDto.Login} updated (Role: {updatedUserDto.EngRoleName})");
 
                 return Ok();
             }
@@ -118,7 +118,7 @@ namespace Dekauto.Auth.Service.Controllers
                 }
 
                 await userAuthService.AddUserAsync(userDto, password);
-                logger.LogInformation($"User {userDto.Login} created (Role: {userDto.RoleName})");
+                logger.LogInformation($"User {userDto.Login} created (Role: {userDto.EngRoleName})");
 
                 return Ok();
             }

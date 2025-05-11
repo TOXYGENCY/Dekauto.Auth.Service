@@ -120,10 +120,12 @@ namespace Dekauto.Auth.Service.Services
             {
                 Console.WriteLine($"WARNING: роль == null у пользователя {user}");
                 userDto.RoleName = null;
+                userDto.EngRoleName = null;
             }
             else
             {
                 userDto.RoleName = user.Role.Name;
+                userDto.EngRoleName = user.Role.EngName;
             }
             return userDto;
         }
@@ -166,7 +168,7 @@ namespace Dekauto.Auth.Service.Services
             {
                 var role = await rolesService.GetByRoleNameAsync(updatedUserDto.RoleName);
                 if (role == null)
-                    throw new InvalidOperationException($"Роль '{updatedUserDto.RoleName}' не найдена.");
+                    throw new InvalidOperationException($"Роль '{updatedUserDto.EngRoleName}' не найдена.");
                 user.RoleId = role.Id;
                 user.Role = role;
             }
@@ -179,7 +181,7 @@ namespace Dekauto.Auth.Service.Services
 
             var passwordHash = HashPassword(password);
             var role = await rolesService.GetByRoleNameAsync(userDto.RoleName);
-            if (role == null) throw new KeyNotFoundException($"Роль {userDto.RoleName} не найдена");
+            if (role == null) throw new KeyNotFoundException($"Роль {userDto.EngRoleName} не найдена");
 
             var newUser = await FromDtoAsync(userDto);
             newUser.PasswordHash = passwordHash;

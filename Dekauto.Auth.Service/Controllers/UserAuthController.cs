@@ -73,7 +73,8 @@ namespace Dekauto.Auth.Service.Controllers
                 if (fullRefreshToken is null)
                 {
                     logger.LogError(null, "Refresh token not found in the registry");
-                    return StatusCode(StatusCodes.Status401Unauthorized,
+                    // Не 401, потому что фронт будет циклиться на 401 и никуда не продвинется
+                    return StatusCode(StatusCodes.Status403Forbidden,
                         "Пожалуйста, войдите снова. (Refresh-токен не найден в реестре)");
                 }
 
@@ -81,7 +82,8 @@ namespace Dekauto.Auth.Service.Controllers
                 if (newTokens is null)
                 {
                     logger.LogError(null, "Refresh token is expired");
-                    return StatusCode(StatusCodes.Status401Unauthorized,
+                    // Не 401, потому что фронт будет циклиться на 401 и никуда не продвинется
+                    return StatusCode(StatusCodes.Status403Forbidden,
                         "Пожалуйста, войдите снова. (Refresh-токен просрочен)");
                 }
 

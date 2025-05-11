@@ -72,7 +72,7 @@ try
     // TODO: настроить связь между латинскими названиями 
     // Политики доступа к эндпоинтам
     builder.Services.AddAuthorizationBuilder()
-        .AddPolicy("OnlyAdmin", policy => policy.RequireRole("Администратор"));
+        .AddPolicy("OnlyAdmin", policy => policy.RequireRole("Admin"));
 
     builder.Services.AddAuthorization();
     // Add services to the container.
@@ -135,14 +135,14 @@ try
 
     // Configure the HTTP request pipeline.
 
-    app.UseCors("AngularLocalhost");
 
     // Явно указываем порты (для Docker)
     app.Urls.Add("http://*:5507");
 
     if (app.Environment.IsDevelopment())
     {
-        Log.Warning("The Development version of the application is started. Swagger activation...");
+        app.UseCors("AngularLocalhost");
+        Log.Warning("Development version of the application is started. Swagger activation...");
         app.UseSwagger();
         app.UseSwaggerUI();
     }

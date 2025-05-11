@@ -58,7 +58,7 @@ namespace Dekauto.Auth.Service.Services
                 new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
                 
                 // Добавляем роли пользователя
-                new Claim(ClaimTypes.Role, account.RoleName)
+                new Claim(ClaimTypes.Role, account.EngRoleName)
 
             };
             try

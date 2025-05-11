@@ -7,5 +7,6 @@
         public string Login { get; set; }
 
         public string RoleName { get; set; }
+        public string EngRoleName { get; set; }
     }
 }

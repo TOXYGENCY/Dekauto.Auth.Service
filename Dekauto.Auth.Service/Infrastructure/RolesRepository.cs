@@ -37,7 +37,7 @@ namespace Dekauto.Auth.Service.Infrastructure
 
         public async Task<Role> GetByRoleNameAsync(string name)
         {
-            return await сontext.Roles.FirstOrDefaultAsync(role => role.Name == name);
+            return await сontext.Roles.FirstOrDefaultAsync(role => role.EngName == name);
         }
 
         public async Task UpdateAsync(Role updatedRole)

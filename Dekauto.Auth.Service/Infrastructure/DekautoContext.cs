@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+using System.Collections.Generic;
 using Dekauto.Auth.Service.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -71,9 +72,16 @@ public partial class DekautoContext : DbContext
 
             entity.ToTable("roles");
 
+            entity.HasIndex(e => e.EngName, "roles_eng_name_key").IsUnique();
+
+            entity.HasIndex(e => e.Name, "roles_name_key").IsUnique();
+
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("id");
+            entity.Property(e => e.EngName)
+                .HasMaxLength(50)
+                .HasColumnName("eng_name");
             entity.Property(e => e.Name)
                 .HasMaxLength(50)
                 .HasColumnName("name");

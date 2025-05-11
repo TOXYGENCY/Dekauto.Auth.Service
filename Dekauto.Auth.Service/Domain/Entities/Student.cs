@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Dekauto.Auth.Service.Domain.Entities;
 
@@ -154,12 +155,9 @@ public partial class Student
 
     public string? Education { get; set; }
 
-    [JsonIgnore]
     public virtual Group? Group { get; set; }
 
-    [JsonIgnore]
     public virtual Oo? Oo { get; set; }
 
-    [JsonIgnore]
     public virtual User? User { get; set; }
 }

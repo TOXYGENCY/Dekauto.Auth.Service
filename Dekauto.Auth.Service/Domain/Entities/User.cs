@@ -1,4 +1,6 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Dekauto.Auth.Service.Domain.Entities;
 
@@ -12,6 +14,7 @@ public partial class User
 
     public Guid RoleId { get; set; }
 
+    [JsonIgnore]
     public virtual Role Role { get; set; } = null!;
 
     [JsonIgnore]
