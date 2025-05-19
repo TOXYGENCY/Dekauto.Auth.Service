@@ -48,7 +48,17 @@ try
 
     var connectionString = builder.Configuration.GetConnectionString("Main");
 
+    // Получаем список origins из конфигурации
+    var allowedOrigins = builder.Configuration
+        .GetSection("CorsSettings:AllowedOrigins").Get<string[]>();
 
+    if (allowedOrigins == null || !allowedOrigins.Any())
+    {
+        var mes = 
+            "CORS AllowedOrigins are not specified in config (appsettings.json or environment). Can't configure CORS";
+        Log.Error(mes);
+        throw new InvalidOperationException(mes);
+    }
 
     // Добавляем JWT сервисы
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -69,7 +79,6 @@ try
         });
     builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
-    // TODO: настроить связь между латинскими названиями 
     // Политики доступа к эндпоинтам
     builder.Services.AddAuthorizationBuilder()
         .AddPolicy("OnlyAdmin", policy => policy.RequireRole("Admin"));
@@ -120,9 +129,14 @@ try
     builder.Services.AddDbContext<DekautoContext>(options =>
         options.UseNpgsql(connectionString)
         .UseLazyLoadingProxies());
-    builder.Services.AddCors(options => options.AddPolicy("AngularLocalhost", policy =>
+    builder.Services.AddCors(options => options.AddPolicy("AllowMainHosts", policy =>
     {
-        policy.WithOrigins("http://localhost:4200") // Адрес Angular-приложения
+        policy.WithOrigins(
+            "http://localhost:4200", // Локальный адрес Angular-приложения
+            "http://10.3.50.241:5500", // Angular-фронт
+            "https://10.3.50.241:5500", // Angular-фронт https
+            "http://10.3.50.241:5507", // Свой же адрес
+            "https://10.3.50.241:5508") // Свой же адрес https
                  .AllowAnyHeader()
                  .AllowAnyMethod()
                  .WithExposedHeaders("Content-Disposition")
@@ -138,17 +152,18 @@ try
 
     // Явно указываем порты (для Docker)
     app.Urls.Add("http://*:5507");
+    
+    app.UseCors("AllowMainHosts");
 
     if (app.Environment.IsDevelopment())
     {
-        app.UseCors("AngularLocalhost");
         Log.Warning("Development version of the application is started. Swagger activation...");
         app.UseSwagger();
         app.UseSwaggerUI();
     }
 
     // Используем https, если это указано в конфиге
-    if (Boolean.Parse(app.Configuration["UseHttps"]))
+    if (Boolean.Parse(app.Configuration["UseHttps"] ?? "false"))
     {
         app.Urls.Add("https://*:5508");
         app.UseHttpsRedirection();
