@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Serilog.Formatting.Compact;
+using Serilog.Sinks.Grafana.Loki;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -14,14 +16,23 @@ using System.Text.Json.Serialization;
 Log.Logger = new LoggerConfiguration()
 .MinimumLevel.Information()
 .WriteTo.Console(
-    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}")
-.WriteTo.File("logs/Dekauto-Auth-.log", 
-    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}", 
+    new CompactJsonFormatter()
+    //outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
+    )
+.WriteTo.GrafanaLoki(
+        "http://loki:3100",
+        labels: new List<LokiLabel>
+        {
+            new LokiLabel { Key = "app", Value = "dekauto-auth" },
+            new LokiLabel { Key = "app", Value = "dekauto-full" }
+        })
+.WriteTo.File("logs/Dekauto-Auth-.log",
+    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}",
     rollingInterval: RollingInterval.Day,
     rollOnFileSizeLimit: true,
     fileSizeLimitBytes: 10485760, // Ограничение на размер одного лога 10 MB
     retainedFileCountLimit: 31, // может быть 31 файл с последними логами, перед тем, как они будут удаляться
-    encoding: Encoding.UTF8) 
+    encoding: Encoding.UTF8)
 .CreateLogger();
 
 try
@@ -54,14 +65,16 @@ try
 
     if (allowedOrigins == null || !allowedOrigins.Any())
     {
-        var mes = 
+        var mes =
             "CORS AllowedOrigins are not specified in config (appsettings.json or environment). Can't configure CORS";
         Log.Error(mes);
         throw new InvalidOperationException(mes);
     }
 
-    // Добавляем JWT сервисы
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    if (Boolean.Parse(builder.Configuration["UseEndpointAuth"] ?? "true"))
+    {
+
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters
@@ -77,13 +90,20 @@ try
                 ClockSkew = TimeSpan.Zero
             };
         });
-    builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
-    // Политики доступа к эндпоинтам
-    builder.Services.AddAuthorizationBuilder()
-        .AddPolicy("OnlyAdmin", policy => policy.RequireRole("Admin"));
+        // Политики доступа к эндпоинтам
+        builder.Services.AddAuthorizationBuilder()
+            .AddPolicy("OnlyAdmin", policy => policy.RequireRole("Admin"));
 
-    builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization();
+    }
+    else
+    {
+        // Заглушка политик доступа, если авторизация выключена
+        builder.Services.AddAuthorizationBuilder()
+            .AddPolicy("OnlyAdmin", policy => policy.RequireAssertion(_ => true));
+    }
+
     // Add services to the container.
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
@@ -121,6 +141,8 @@ try
         }
         });
     });
+    // Добавляем JWT сервис
+    builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
     builder.Services.AddTransient<IUserAuthService, UserAuthService>();
     builder.Services.AddTransient<IUsersRepository, UsersRepository>();
     builder.Services.AddTransient<IRolesRepository, RolesRepository>();
@@ -144,10 +166,9 @@ try
 
     // Configure the HTTP request pipeline.
 
-
     // Явно указываем порты (для Docker)
     app.Urls.Add("http://*:5507");
-    
+
     app.UseCors("AllowMainHosts");
 
     if (app.Environment.IsDevelopment())
@@ -157,20 +178,30 @@ try
         app.UseSwaggerUI();
     }
 
-    // Используем https, если это указано в конфиге
+    // Включаем https, если указано в конфиге
     if (Boolean.Parse(app.Configuration["UseHttps"] ?? "false"))
     {
         app.Urls.Add("https://*:5508");
         app.UseHttpsRedirection();
         Log.Information("Enabled HTTPS.");
     }
+    else
+    {
+        Log.Warning("Disabled HTTPS.");
+    }
 
-    // Аутентификация (JWT, куки и т.д.)
-    app.UseAuthentication();
+    if (Boolean.Parse(app.Configuration["UseEndpointAuth"] ?? "true"))
+    {
+        // Аутентификация (JWT, куки)
+        app.UseAuthentication();
 
-    // Авторизация (проверка атрибутов [Authorize])
-    app.UseAuthorization();
-
+        // Авторизация (проверка атрибутов [Authorize])
+        app.UseAuthorization();
+    }
+    else
+    {
+        Log.Warning("Disabled all endpoint authorization.");
+    }
     app.MapControllers();
 
     app.UseMetricsMiddleware(); // Метрики
