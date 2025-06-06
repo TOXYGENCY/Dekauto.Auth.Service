@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Prometheus;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.Loki;
@@ -193,6 +194,7 @@ try
 
     app.MapControllers();
 
+    app.MapMetrics();
     app.UseMetricsMiddleware(); // Метрики
 
     Log.Information("Application startup...");
