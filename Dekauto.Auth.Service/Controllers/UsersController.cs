@@ -1,7 +1,9 @@
 ﻿using Dekauto.Auth.Service.Domain.Entities.DTO;
 using Dekauto.Auth.Service.Domain.Interfaces;
+using Dekauto.Auth.Service.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Authentication;
 
 namespace Dekauto.Auth.Service.Controllers
 {
@@ -59,12 +61,52 @@ namespace Dekauto.Auth.Service.Controllers
             }
         }
 
-        [HttpPut("{userId}")]
-        public async Task<IActionResult> UpdateUserAsync(Guid userId, UserDto updatedUserDto)
+        [HttpPost("{userId}/changepass")]
+        public async Task<IActionResult> UpdateUserPassword(Guid userId, string newPassword, string currentPassword)
         {
             try
             {
-                await userAuthService.UpdateUserAsync(userId, updatedUserDto);
+                if (string.IsNullOrEmpty(newPassword))
+                {
+                    throw new ArgumentException($"'{nameof(newPassword)}' cannot be null or empty.", nameof(newPassword));
+                }
+
+                if (string.IsNullOrEmpty(currentPassword))
+                {
+                    throw new ArgumentException($"'{nameof(currentPassword)}' cannot be null or empty.", nameof(currentPassword));
+                }
+
+                await userAuthService.ChangePasswordAsync(userId, newPassword, currentPassword);
+
+                return Ok();
+
+            }
+            catch (InvalidCredentialException ex)
+            {
+                logger.LogError(ex, "Invalid password.");
+                return StatusCode(StatusCodes.Status403Forbidden, "Указан неверный пароль.");
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogError(ex, "Not enough arguments passed to change the password");
+                return StatusCode(StatusCodes.Status400BadRequest,
+                    "Возникла непредвиденная ошибка при изменении пароля. Обратитесь к администратору или попробуйте позже.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "An unexpected error occurred while changing the password");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Возникла непредвиденная ошибка при изменении пароля. Обратитесь к администратору или попробуйте позже.");
+            }
+        }
+
+        [HttpPut("{userId}")]
+        public async Task<IActionResult> UpdateUserAsync(Guid userId, UserDto updatedUserDto, 
+                                                            string? newPassword = null)
+        {
+            try
+            {
+                await userAuthService.UpdateUserAsync(userId, updatedUserDto, newPassword);
                 logger.LogInformation($"User {updatedUserDto.Login} updated (Role: {updatedUserDto.EngRoleName})");
 
                 return Ok();
