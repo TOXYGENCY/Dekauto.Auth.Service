@@ -6,28 +6,32 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.Loki;
 using System.Text;
 using System.Text.Json.Serialization;
 
-
-// Настройка логгера Serilog
+var tempOutputTemplate = "[AUTH STARTUP LOGGER] {Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}";
+// Временные логгер Serilog для этапа до создания билдера
 Log.Logger = new LoggerConfiguration()
-.MinimumLevel.Information()
-.WriteTo.Console(
-    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}")
-.WriteTo.File("logs/Dekauto-Auth-.log", 
-    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}", 
-    rollingInterval: RollingInterval.Day,
-    rollOnFileSizeLimit: true,
-    fileSizeLimitBytes: 10485760, // Ограничение на размер одного лога 10 MB
-    retainedFileCountLimit: 31, // может быть 31 файл с последними логами, перед тем, как они будут удаляться
-    encoding: Encoding.UTF8) 
-.CreateLogger();
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Fatal) // Только критические ошибки из Microsoft-сервисов
+    .Enrich.FromLogContext()
+    .WriteTo.Console(
+        outputTemplate: tempOutputTemplate,
+        restrictedToMinimumLevel: LogEventLevel.Information
+    )
+    .WriteTo.File(
+        "logs/Auth-startup-log.txt",
+        outputTemplate: tempOutputTemplate,
+        rollingInterval: RollingInterval.Day,
+        restrictedToMinimumLevel: LogEventLevel.Warning
+    )
+    .CreateBootstrapLogger(); // временный логгер
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
-    builder.Host.UseSerilog();
+
     // Применение конфигов.
     builder.Configuration
         .AddEnvironmentVariables()
@@ -36,6 +40,22 @@ try
         .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
         .AddJsonFile($"appsettings.{Environment.UserName.ToLowerInvariant()}.json", optional: true, reloadOnChange: true)
         .AddCommandLine(args);
+
+    // Полноценная настройка Serilog логгера (из конфига)
+    builder.Host.UseSerilog((builderContext, serilogConfig) =>
+        {
+            serilogConfig
+                .ReadFrom.Configuration(builderContext.Configuration)
+                .WriteTo.Loki(new LokiSinkConfigurations()
+                {
+                    Url = new Uri("http://loki:3100"),
+                    Labels =
+                    [
+                        new LokiLabel("app_startup", "dekauto_auth") ,
+                        new LokiLabel("app_full","dekauto_full")
+                    ]
+                });
+        });
 
     builder.Configuration["Jwt:Key"] = Environment.GetEnvironmentVariable("Jwt__Key");
     var jwtKey = builder.Configuration["Jwt:Key"];
@@ -54,8 +74,8 @@ try
 
     if (allowedOrigins == null || !allowedOrigins.Any())
     {
-        var mes = 
-            "CORS AllowedOrigins are not specified in config (appsettings.json or environment). Can't configure CORS";
+        var mes =
+            "CORS AllowedOrigins are not specified in serilogConfig (appsettings.json or environment). Can't configure CORS";
         Log.Error(mes);
         throw new InvalidOperationException(mes);
     }
@@ -180,7 +200,29 @@ try
 }
 catch (Exception ex)
 {
+    // В случае краха приложения при запуске пытаемся отправить логи:
+    // 1. Запись в файл и консоль контейнера
     Log.Fatal(ex, "An unexpected Fatal error has occurred in the application.");
+    try
+    {
+        // 2. Попытка отправить критическую ошибку в Loki
+        using var tempLogger = new LoggerConfiguration()
+            .WriteTo.Loki(new LokiSinkConfigurations()
+            {
+                Url = new Uri("http://loki:3100"),
+                Labels =
+                [
+                    new LokiLabel("app_startup", "dekauto_auth_startup") ,
+                    new LokiLabel("app_full","dekauto_full")
+                ]
+            })
+            .CreateLogger();
+        tempLogger.Fatal(ex, "[AUTH TEMPORARY FATAL LOGGER] Application startup failed");
+    }
+    catch (Exception lokiEx)
+    {
+        Log.Warning(lokiEx, "Failed to send log to Loki");
+    }
 }
 finally
 {
