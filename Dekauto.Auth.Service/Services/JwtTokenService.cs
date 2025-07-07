@@ -94,11 +94,19 @@ namespace Dekauto.Auth.Service.Services
         // Метод генерации refresh токена
         private RefreshToken GenerateRefreshToken(Guid userId)
         {
+            // Назначение времени истечения срока (минуты или дни) - в основном для дебага
+            var refreshTokenPeriod = configuration["Jwt:RefreshTokenPeriod"] ?? "d";
+            Console.WriteLine(refreshTokenPeriod);
+            var refreshTokenExpires = refreshTokenPeriod == "d" 
+                ? DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:RefreshTokenExpireDays"] ?? "7"))
+                : DateTime.UtcNow.AddMinutes(Convert.ToDouble(configuration["Jwt:RefreshTokenExpireMinutes"] ?? "60"));
+            Console.WriteLine(refreshTokenExpires);
+
             var newRefreshToken = new RefreshToken
             {
                 Token = Guid.NewGuid().ToString("N"),
                 UserId = userId,
-                Expires = DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:RefreshTokenExpireDays"] ?? "7"))
+                Expires = refreshTokenExpires
             };
 
             // Удаляем все существующие refresh-токены для этого пользователя

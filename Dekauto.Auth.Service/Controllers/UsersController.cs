@@ -26,7 +26,7 @@ namespace Dekauto.Auth.Service.Controllers
 
         // INFO: может вернуть пустой список
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsersAsync()
         {
             try
             {
@@ -43,7 +43,7 @@ namespace Dekauto.Auth.Service.Controllers
         }
 
         [HttpGet("{userId}")]
-        public async Task<ActionResult<UserDto>> GetUserById(Guid userId)
+        public async Task<ActionResult<UserDto>> GetUserByIdAsync(Guid userId)
         {
             try
             {
@@ -62,7 +62,7 @@ namespace Dekauto.Auth.Service.Controllers
         }
 
         [HttpPost("{userId}/changepass")]
-        public async Task<IActionResult> UpdateUserPassword(Guid userId, string newPassword, string currentPassword)
+        public async Task<IActionResult> UpdateUserPasswordAsync(Guid userId, string newPassword, string currentPassword)
         {
             try
             {
@@ -127,7 +127,7 @@ namespace Dekauto.Auth.Service.Controllers
 
 
         [HttpDelete("{userId}")]
-        public async Task<IActionResult> DeleteUser(Guid userId)
+        public async Task<IActionResult> DeleteUserAsync(Guid userId)
         {
             try
             {
