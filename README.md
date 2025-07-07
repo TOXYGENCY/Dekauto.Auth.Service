@@ -19,11 +19,11 @@
 
 ## ❇ API документация
 #### Контроллер: Users (требует роль Admin)
-- `GET    api/users`                  - **GetAllUsers**       - Список всех пользователей (может быть пустым)
-- `GET    api/users/{userId}`         - **GetUserById**       - Пользователь по GUID
-- `POST   api/users/{userId}/changepass` - **UpdateUserPassword** - Смена пароля (текущий + новый пароль)
+- `GET    api/users`                  - **GetAllUsersAsync**       - Список всех пользователей (может быть пустым)
+- `GET    api/users/{userId}`         - **GetUserByIdAsync**       - Пользователь по GUID
+- `POST   api/users/{userId}/changepass` - **UpdateUserPasswordAsync** - Смена пароля (текущий + новый пароль)
 - `PUT    api/users/{userId}`         - **UpdateUserAsync**    - Обновление данных пользователя (+ опционально пароль)
-- `DELETE api/users/{userId}`         - **DeleteUser**        - Удаление пользователя по GUID
+- `DELETE api/users/{userId}`         - **DeleteUserAsync**        - Удаление пользователя по GUID
 - `POST   api/users`                  - **AddUserAsync**      - Добавление нового пользователя (с паролем)
 
 #### Контроллер: Auth (аутентификация)
