@@ -33,6 +33,7 @@ namespace Dekauto.Auth.Service.Controllers
                 // Устанавливаем rt в HttpOnly cookie
                 userAuthService.SetRefreshTokenCookie(Response, tokensModel.RefreshToken.Token);
 
+                logger.LogInformation($"User {loginUser.Login} authenticated.");
                 return Ok(tokensModel.TokenAdapter);
             }
             catch (KeyNotFoundException ex)
@@ -43,7 +44,7 @@ namespace Dekauto.Auth.Service.Controllers
             }
             catch (ArgumentNullException ex)
             {
-                logger.LogError(ex, "No account login data was received.");
+                logger.LogWarning(ex, "No account login data was received.");
                 // Но может быть и InternalServerError
                 return StatusCode(StatusCodes.Status400BadRequest,
                     "Не получены данные входа в аккаунт. Обратитесь к администратору или попробуйте снова.");
@@ -72,7 +73,7 @@ namespace Dekauto.Auth.Service.Controllers
                 var fullRefreshToken = userAuthService.GetRefreshToken(refreshTokenString);
                 if (fullRefreshToken is null)
                 {
-                    logger.LogError(null, "Refresh token not found in the registry");
+                    logger.LogWarning(null, "Refresh token not found in the registry");
                     // Не 401, потому что фронт будет циклиться на 401 и никуда не продвинется
                     return StatusCode(StatusCodes.Status403Forbidden,
                         "Пожалуйста, войдите снова. (Refresh-токен не найден в реестре)");
@@ -81,7 +82,7 @@ namespace Dekauto.Auth.Service.Controllers
                 var newTokens = await userAuthService.RefreshTokensAsync(fullRefreshToken);
                 if (newTokens is null)
                 {
-                    logger.LogError(null, "Refresh token is expired");
+                    logger.LogWarning(null, "Refresh token is expired");
                     // Не 401, потому что фронт будет циклиться на 401 и никуда не продвинется
                     return StatusCode(StatusCodes.Status403Forbidden,
                         "Пожалуйста, войдите снова. (Refresh-токен просрочен)");
@@ -90,6 +91,7 @@ namespace Dekauto.Auth.Service.Controllers
                 // Устанавливаем rt в HttpOnly cookie
                 userAuthService.SetRefreshTokenCookie(Response, newTokens.RefreshToken.Token);
 
+                logger.LogInformation($"Tokens for user {userId} refreshed.");
                 return Ok(newTokens.TokenAdapter);
             }
             catch (ArgumentNullException ex)

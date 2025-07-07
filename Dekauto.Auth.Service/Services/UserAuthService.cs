@@ -4,6 +4,7 @@ using Dekauto.Auth.Service.Domain.Entities.Models;
 using Dekauto.Auth.Service.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using System.Collections.Concurrent;
+using System.Security.Authentication;
 using System.Text.Json;
 
 namespace Dekauto.Auth.Service.Services
@@ -24,6 +25,20 @@ namespace Dekauto.Auth.Service.Services
             this.configuration = configuration;
             this.rolesService = rolesService;
             hasher = new PasswordHasher<object>();
+        }
+
+        public bool VerifyHashedPassword(string hashedPassword, string providedPassword)
+        {
+            var result = hasher.VerifyHashedPassword(null, hashedPassword, providedPassword);
+            // Проверка данных и выдача at + rt + данных пользователя, если успех
+            if (result == PasswordVerificationResult.Success || result == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public async Task<TokensModel> AuthenticateAndGetTokensAsync(string login, string password)
@@ -81,6 +96,22 @@ namespace Dekauto.Auth.Service.Services
             response.Cookies.Delete("refreshToken", deleteOptions);
             // Ставим новую куку
             response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
+
+        public async Task ChangePasswordAsync(Guid userId, string newPassword, string currentPassword)
+        {
+            var currentUser = await usersRepository.GetByIdAsync(userId);
+
+            // Сравниваем пароли для подтверждения изменения пароля на новый
+            if (VerifyHashedPassword(currentUser.PasswordHash, currentPassword))
+            {
+                currentUser.PasswordHash = HashPassword(newPassword);
+                await usersRepository.UpdateAsync(currentUser);
+            } 
+            else
+            {
+                throw new InvalidCredentialException("Неверный пароль.");
+            }
         }
 
         // хеширование пароля
@@ -143,7 +174,7 @@ namespace Dekauto.Auth.Service.Services
             return userDtos;
         }
 
-        public async Task UpdateUserAsync(Guid userId, UserDto updatedUserDto, string newPassword = null)
+        public async Task UpdateUserAsync(Guid userId, UserDto updatedUserDto, string? newPassword = null)
         {
             if (updatedUserDto == null || userId == null) throw new ArgumentNullException("Не все аргументы переданы.");
             if (updatedUserDto.Id != userId) throw new ArgumentException("ID не совпадают.");
@@ -151,7 +182,7 @@ namespace Dekauto.Auth.Service.Services
             // Получаем текущего пользователя из репозитория
             var user = await usersRepository.GetByIdAsync(userId);
             if (user == null)
-                throw new InvalidOperationException($"Пользоват  ель с Id = {userId} не найден.");
+                throw new InvalidOperationException($"Пользователь с Id = {userId} не найден.");
 
             // Обновляем поля, которые должны измениться
             user.Login = updatedUserDto.Login;
