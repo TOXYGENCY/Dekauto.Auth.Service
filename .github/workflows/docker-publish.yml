@@ -2,10 +2,12 @@ name: Docker Build and Push
 
 on:
   push:
-    branches: ["dev"]
+
+    branches: ["master"]
+    tags: [ 'v*.*.*' ]
   pull_request:
-    branches: ["dev"]
-# чек
+    branches: ["master"]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,12 +25,17 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v5 
+        uses: docker/metadata-action@v5
         with:
           images: |
             ${{ secrets.DOCKERHUB_USERNAME }}/dekauto_auth_service
           tags: |
-            type=raw,value=latest-dev
+            type=raw,value=latest
+            
+            type=raw,value=release,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
