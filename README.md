@@ -1,5 +1,5 @@
-# Dekauto: 🔵 Сервис Авторизации (Dekauto.Auth.Service)
-### Сервис управления учетными записями пользователей, осуществления входа и выдачи токенов для входа.
+# Dekauto: ⚪ Сервис Авторизации (Dekauto.Auth.Service)
+### Сервис управления учетными записями пользователей, осуществления входа и выдачи токенов для входа. Необходим для доступа к эндпоинтам сервисов [Студенты](https://github.com/TOXYGENCY/Dekauto.Students.Service), [Импорт](https://github.com/TOXYGENCY/Dekauto.Import.Service) и [Dekauto.Export.Service](https://github.com/TOXYGENCY/Dekauto.Export.Service).
 
 ### 🔸 Функции
 - Управление (CRUD) объектами User, Role.
@@ -18,8 +18,9 @@
 - CI (GitHub Actions)
 
 ## ❇ API-справка
+>#### Расположен на портах `5507 (HTTP)` и `5508 (HTTPS)`
 #### Контроллер: Users (требует роль Admin)
-- `GET    api/users`                  - **GetAllUsersAsync**       - Список всех пользователей (может быть пустым)
+- `GET    api/users`                  - **GetAllUsersAsync**       - Список всех пользователей
 - `GET    api/users/{userId}`         - **GetUserByIdAsync**       - Пользователь по GUID
 - `POST   api/users/{userId}/changepass` - **UpdateUserPasswordAsync** - Смена пароля (текущий + новый пароль)
 - `PUT    api/users/{userId}`         - **UpdateUserAsync**    - Обновление данных пользователя (+ опционально пароль)
@@ -42,7 +43,7 @@
 >    * DockerHub-образ: `toxygency/dekauto_auth_service:release`
 >* 🔵 [Dekauto.Students.Service](https://github.com/TOXYGENCY/Dekauto.Students.Service) - Сервис управления Студентами.
 >    * DockerHub-образ: `toxygency/dekauto_students_service:release`
->* 🟣 [Dekauto.Import.Service](https://github.com/TOXYGENCY/Dekauto.Import.Service) - Сервис парсинга файлов Excel для импорта.
+>* 🟣 [Dekauto.Import.Service](https://github.com/TOXYGENCY/Dekauto.Import.Service) - Сервис парсинга Excel-файлов для импорта.
 >    * DockerHub-образ: `toxygency/dekauto_import_service:release`
 >* 🟢 [Dekauto.Export.Service](https://github.com/TOXYGENCY/Dekauto.Export.Service) - Сервис формирования выходного Excel-файла.
 >    * DockerHub-образ: `toxygency/dekauto_export_service:release`
