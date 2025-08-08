@@ -47,6 +47,7 @@ try
         {
             serilogConfig
                 .ReadFrom.Configuration(builderContext.Configuration)
+                // Ручная настройка Loki
                 .WriteTo.Loki(new LokiSinkConfigurations()
                 {
                     Url = new Uri("http://loki:3100"),
@@ -81,8 +82,10 @@ try
         throw new InvalidOperationException(mes);
     }
 
-    // Добавляем JWT сервисы
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    if (Boolean.Parse(builder.Configuration["UseEndpointAuth"] ?? "true"))
+    {
+
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters
@@ -98,13 +101,20 @@ try
                 ClockSkew = TimeSpan.Zero
             };
         });
-    builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
     // Политики доступа к эндпоинтам
     builder.Services.AddAuthorizationBuilder()
         .AddPolicy("OnlyAdmin", policy => policy.RequireRole("Admin"));
 
-    builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization();
+    }
+    else
+    {
+        // Заглушка политик доступа, если авторизация выключена
+        builder.Services.AddAuthorizationBuilder()
+            .AddPolicy("OnlyAdmin", policy => policy.RequireAssertion(_ => true));
+    }
+
     // Add services to the container.
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
@@ -142,6 +152,8 @@ try
         }
         });
     });
+    // Добавляем JWT сервис
+    builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
     builder.Services.AddTransient<IUserAuthService, UserAuthService>();
     builder.Services.AddTransient<IUsersRepository, UsersRepository>();
     builder.Services.AddTransient<IRolesRepository, RolesRepository>();
@@ -185,13 +197,23 @@ try
         app.UseHttpsRedirection();
         Log.Information("Enabled HTTPS.");
     }
+    else
+    {
+        Log.Warning("Disabled HTTPS.");
+    }
 
-    // Аутентификация (JWT, куки и т.д.)
-    app.UseAuthentication();
+    if (Boolean.Parse(app.Configuration["UseEndpointAuth"] ?? "true"))
+    {
+        // Аутентификация (JWT, куки)
+        app.UseAuthentication();
 
-    // Авторизация (проверка атрибутов [Authorize])
-    app.UseAuthorization();
-
+        // Авторизация (проверка атрибутов [Authorize])
+        app.UseAuthorization();
+    }
+    else
+    {
+        Log.Warning("Disabled all endpoint authorization.");
+    }
     app.MapControllers();
 
     app.MapMetrics();
