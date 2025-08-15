@@ -27,6 +27,15 @@ Log.Logger = new LoggerConfiguration()
         rollingInterval: RollingInterval.Day,
         restrictedToMinimumLevel: LogEventLevel.Warning
     )
+    .WriteTo.Loki(new LokiSinkConfigurations()
+    {
+        Url = new Uri("http://loki:3100"),
+        Labels =
+        [
+            new LokiLabel("service_name", "dekauto_students"),
+            new LokiLabel("app","dekauto_full")
+        ]
+    })
     .CreateBootstrapLogger(); // временный логгер
 
 try
@@ -53,8 +62,10 @@ try
                     Url = new Uri("http://loki:3100"),
                     Labels =
                     [
-                        new LokiLabel("app_startup", "dekauto_auth") ,
-                        new LokiLabel("app_full","dekauto_full")
+                        new LokiLabel("service_name", "dekauto_auth"),
+                        new LokiLabel("app","dekauto_full"),
+                        new LokiLabel("env",
+                            builderContext.HostingEnvironment.IsDevelopment() ? "dev" : "prod")
                     ]
                 });
         });
@@ -235,13 +246,13 @@ catch (Exception ex)
             {
                 Url = new Uri("http://loki:3100"),
                 Labels =
-                [
-                    new LokiLabel("app_startup", "dekauto_auth_startup") ,
-                    new LokiLabel("app_full","dekauto_full")
-                ]
+                    [
+                        new LokiLabel("service_name", "dekauto_auth"),
+                        new LokiLabel("app","dekauto_full")
+                    ]
             })
             .CreateLogger();
-        tempLogger.Fatal(ex, "[AUTH TEMPORARY FATAL LOGGER] Application startup failed");
+        tempLogger.Fatal(ex, "[AUTH FATAL TEMPORARY LOGGER] Application startup failed");
     }
     catch (Exception lokiEx)
     {
